@@ -261,7 +261,6 @@ However, several interesting patterns emerged:
 
 - Testing factors separately allowed me to identify which specific aspects of "healthiness" might matter to users, but it also meant I couldn't detect synergistic effects if they exist
 - The threshold values I chose (20% PDV, 400 calories) were based on FDA guidelines but may not align with how users actually think about "healthy" vs "unhealthy" recipes
-- Running multiple permutation tests increases the chance of Type I errors; a Bonferroni correction would make the significance threshold even stricter (0.01/4 = 0.0025)
 
 **Conclusion**: Based on this analysis, recipe healthiness does not appear to be a major factor in determining ratings. Users likely rate recipes based on taste, ease of preparation, and whether the recipe worked as expected, rather than nutritional content.
 
@@ -292,17 +291,17 @@ We would **NOT** use:
 - Ratings (these come after)
 - User information from reviews
 
-**Evaluation Metric**: **F1-Score (macro-averaged)**
+**Evaluation Metric**: **F1-Score**
 
-**Why F1-Score?**
+**Why I Chose To Use F1-Score**
 - The distribution of issue types is likely imbalanced (some complaints are more common than others)
 - F1-score balances precision and recall, which is important because:
   - **Precision matters**: We don't want to falsely predict issues that don't exist (could discourage people from trying good recipes)
   - **Recall matters**: We want to catch most actual issues (so users are warned about potential problems)
-- Macro-averaging treats all issue types equally, ensuring the model performs well on rare but important issues, not just common ones
-- Unlike accuracy, F1-score accounts for class imbalance and gives a more realistic picture of model performance
+- F1-score treats all issue types equally, ensuring the model performs well on rare but important issues, not just common ones
+- Unlike just accuracy, F1-score accounts for class imbalance and gives a more realistic picture of model performance
 
-**Alternative metrics considered**:
+**Alternative metrics considered (and why they weren't used)**:
 - Accuracy: Not suitable due to class imbalance - a model that predicts the majority class would have high accuracy but be useless
 - Precision/Recall alone: Each tells only part of the story; F1 balances both
 - Weighted F1: Would prioritize common issues over rare ones, but rare issues might be just as important to predict
@@ -344,28 +343,25 @@ The baseline model achieved the following on the test set:
 
 However, examining the confusion matrix revealed that the model was essentially predicting the majority class (high ratings) for almost all instances, which explains the high accuracy but poor F1-score.
 
-### Is This Model "Good"?
+### Was This Model "Good"?
 
-**No, this baseline model is not good** for several reasons:
+No, my baseline model is not good for several reasons:
+1. **It didn't meaningfully discriminate** - My model largely predicted the majority class, which was to be expected of a naive classifier (one that classifies everything as one thing). 
+2. **It had a low F1-score** - An F1-score of 0.42 indicates poor performance on the minority class (low ratings)
+3. **Some features were not appropriate for the task** - Using `avg_rating` to predict issues is conceptually flawed because:
+   a. Ratings come AFTER reviews, not before
+   b. Using them creates data leakage
+   c. It doesn't help us understand recipe characteristics that lead to issues
 
-1. **It doesn't meaningfully discriminate**: The model largely predicts the majority class, making it no better than a naive classifier
-2. **Low F1-score**: A macro F1-score of 0.42 indicates poor performance on the minority class (low ratings)
-3. **Features are not appropriate for the task**: Using `avg_rating` to predict issues is conceptually flawed because:
-   - Ratings come AFTER reviews, not before
-   - Using them creates data leakage
-   - It doesn't help us understand recipe characteristics that lead to issues
 
-4. **Wrong prediction target**: I realized that predicting ratings is less useful than predicting the types of issues users encounter
-
-### Lessons Learned
-
-This baseline model revealed the need to:
+### My Lessons Learned
+My baseline model revealed the need to:
 1. Reframe the prediction problem to focus on issue types rather than ratings
 2. Use features that are available before reviews are written
 3. Extract meaningful information from text fields (recipe names, ingredients, steps)
 4. Address class imbalance more effectively
 
-The next iteration (Final Model) addresses these issues by predicting issue types using recipe characteristics available at the time of publication.
+At first, I decided to predict rating since it was a simpler thing to test out, and because I originally wanted to see how recipe modifications by users, which is information I'd planned on extracting from reviews,  impacted rating.  However, I realized that reviews are written might be written after  rating, and also found predicting something dynamic or useful more interesting.  That's what the next iteration (Final Model) tries to address, as I try to predicting issue types using recipe characteristics available at the time of publication.  
 
 ---
 
@@ -373,38 +369,39 @@ The next iteration (Final Model) addresses these issues by predicting issue type
 
 ### Problem Reframing
 
-Based on the limitations of the baseline model, I shifted to predicting **types of issues/complaints in reviews** rather than ratings. This is more useful because:
-- It provides actionable insights for recipe improvement
-- It helps users anticipate potential problems
-- It uses only information available before reviews are written
+So, based on the limitations of the baseline model, I shifted to predicting the types of issues/complaints in reviews rather than ratings. 
 
-### Features Added
+This is more useful because:
+- It provides actionable insights for recipe improvement,
+- It helps users anticipate potential problems, and
+- It uses only information available before reviews are written.
 
-I engineered several new features to better capture recipe characteristics:
+### Features Added/Engineered
 
-**1. Recipe Name Features (Nominal → TF-IDF + K-Means Clustering)**
-- **Why**: Recipe names often indicate the type of dish (e.g., "chocolate cake", "chicken soup"), which can correlate with common issues
+IN order to fulfill this goal, I engineered several new features to better capture recipe characteristics:
+
+**1. Recipe Name Features (Nominal --> TF-IDF + K-Means Clustering)**
+- **My Reasoning**: Recipe names often indicate the type of dish (e.g., "vegan chocolate cake", "chicken soup"), which can correlate with common issues/complaints
 - **Transformation**: 
   - Applied TF-IDF vectorization to convert text to numerical features
-  - Used K-Means clustering (k=5) to group similar recipe types
-  - This reduces dimensionality while capturing semantic meaning
-- **Data-generating process connection**: Different recipe categories (desserts vs. savory, simple vs. complex) have characteristic issues (e.g., baking issues for cakes, timing issues for meats)
+  - Used K-Means clustering (k=5) to group similar recipe names (the goal was to reduce dimensionality while capturing semantic meaning)
+- **Creating Data**: Different recipe categories (desserts vs. savory, simple vs. complex) have characteristic issues (e.g., baking issues for cakes, timing issues for meats), which could be helpful for classification when in conjunction with other features 
 
-**2. Ingredients Features (Nominal → TF-IDF + K-Means Clustering)**
-- **Why**: Specific ingredients can predict common problems (e.g., eggs → texture issues, chocolate → burning/melting issues)
+**2. Ingredients Features (Nominal --> TF-IDF + K-Means Clustering)**
+- **My Reasoning**: Similar ingredients can predict common problems between recipes, especially when the recipes are similar and grouped by their similar ingredients (e.g., vegan recipes --> texture issues, chocolate → burning/melting issues)
 - **Transformation**: Same TF-IDF + K-Means approach as recipe names
-- **Data-generating process connection**: Certain ingredients are technically challenging or have specific requirements that novice cooks might struggle with
+- **Creating Data**: Certain ingredients are technically challenging or have specific requirements that novice cooks might struggle with, especially when in the contect of certain recipes (usually share similar ingredients), so inclusion of these problematic ingredients in certain types of recipes could signal potential problems. 
 
-**3. Number of Steps (Quantitative → Standardized)**
-- **Why**: Recipe complexity affects likelihood of errors
+**3. Number of Steps (Quantitative --> Standardized)**
+- **My Reasoning**: Recipe complexity might affect likelihood of errors
 - **Transformation**: StandardScaler to normalize the distribution
-- **Data-generating process connection**: More steps → more opportunities for mistakes
+- **Creating Data**: More steps --> more opportunities for mistakes
 
-**4. Nutritional Categories (Quantitative → One-Hot Encoded)**
-- **Features**: High/low categories for calories, sugar, carbohydrates, protein
-- **Why**: While not significant for ratings, nutritional content might correlate with recipe types that have characteristic issues
+**4. Nutritional Categories (Quantitative --> One-Hot Encoded)**
+- **Features I Considered**: High/low categories for calories, sugar, carbohydrates, protein
+- **My Reasoning**: While not significant for ratings, nutritional content might correlate with recipe types that have characteristic issues (ie, low-carb, low calorie, high-protein recipes)
 - **Transformation**: One-hot encoding of the binary high/low classifications
-- **Data-generating process connection**: High-sugar recipes (desserts) might have different issues than high-protein recipes (meats)
+- **Data Creation**: Can reveal if health concerns makes any significant impact when taken in conjunction with other recipe factors
 
 ### Model Architecture
 
