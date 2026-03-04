@@ -1,5 +1,5 @@
 # Behind The Rating: An Analysis of Recipe Ratings and Reviews
-Website Link: https://jasmine-1e.github.io/Recipes-and-Ratings/ 
+**Website Link:** https://jasmine-1e.github.io/Recipes-and-Ratings/ 
 **By**: Jasmine Le
 
 ---
