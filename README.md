@@ -1,5 +1,5 @@
 # Behind The Rating: An Analysis of Recipe Ratings and Reviews
-
+Website Link: https://jasmine-1e.github.io/Recipes-and-Ratings/ 
 **By**: Jasmine Le
 
 ---
@@ -67,7 +67,7 @@ The following cleaning steps were performed to prepare the data for analysis:
 
 ### Cleaned Data (First 5 Rows)
 
-| name                                 |     id |   minutes |   n_steps |   n_ingredients |   avg_rating |   calories |   sugar |   carbohydrates |   protein |
+| name                                 |     id |  n_steps |   n_ingredients |   avg_rating |   calories |   sugar (PDV) |   carbohydrates (PDV) |   protein (PDV) | saturated_fat |
 |:-------------------------------------|-------:|----------:|----------:|----------------:|-------------:|-----------:|--------:|----------------:|----------:|
 | 1 brownies in the world    best ever | 333281 |        40 |        10 |               9 |            4 |      138.4 |      50 |               6 |         3 |
 | 1 in canada chocolate chip cookies   | 453467 |        45 |        12 |              11 |            5 |      595.1 |     211 |              22 |        13 |
@@ -127,20 +127,17 @@ The box plots comparing high-calorie vs. low-calorie recipes show that both grou
 
 ### Interesting Aggregates
 
-The following table shows the mean nutritional content and average rating grouped by the number of steps in a recipe:
+The following table shows sugar content grouped by the number of steps in a recipe:
 
-| n_steps |   avg_rating |   calories |   sugar |   carbohydrates |   protein |
-|--------:|-------------:|-----------:|--------:|----------------:|----------:|
-|       1 |     4.65574  |    286.397 | 67.0537 |         10.2459 |   15.2541 |
-|       2 |     4.67011  |    312.794 | 75.4767 |         11.1078 |   16.9155 |
-|       3 |     4.68063  |    332.948 | 82.6144 |         11.8419 |   19.0774 |
-|       4 |     4.67843  |    353.429 | 91.4219 |         12.9013 |   21.1992 |
-|       5 |     4.67472  |    373.604 | 97.5086 |         13.6864 |   23.0709 |
-|       6 |     4.67111  |    392.467 | 102.695 |         14.4342 |   24.7955 |
-|       7 |     4.66876  |    407.856 | 106.575 |         15.0396 |   26.1729 |
-|       8 |     4.66497  |    423.083 | 109.779 |         15.6175 |   27.4858 |
+|  rating | sugar (PDV) mean | sugar (PDV) median | sugar (PDV) min | sugar (PDV) max |
+|--------:|-----------------:|-------------------:|----------------:|----------------:|
+|     1.0 |       88.01      |        28.0        |       0.0       |     14495.0     |
+|     2.0 |       75.17      |        25.0        |       0.0       |     3613.0      |
+|     3.0 |       65.55      |        23.0        |       0.0       |     7818.0      |
+|     4.0 |       56.79      |        21.0        |       0.0       |     8360.0      |
+|     5.0 |       63.08      |        22.0        |       0.0       |     30260.0     |
 
-This table reveals that as recipes become more complex (more steps), they tend to have higher nutritional values across all categories, but the average rating remains relatively stable around 4.65-4.68 stars. This suggests that recipe complexity and nutritional content don't strongly correlate with ratings.
+This table reveals that as lower rated recipes may have issues with being too sweet, as the mean and median sugar (PDV) is higher in poorly rated recipes (1.0 and 2.0 ratings) than higher rated recipes (3.0, 4.0, and 5.0 ratings). This suggests that sugar content and recipe rating might be correlated.  
 
 ---
 
@@ -163,12 +160,12 @@ This additional information could explain the missingness through observable fac
 
 I analyzed the missingness of the `rating` column to determine whether it depends on other columns in the dataset.
 
-**Column that rating missingness DOES depend on: `minutes` (preparation time)**
+**Column that rating missingness DOES depend on: `calories (#)`**
 
 I performed a permutation test with:
-- **Test statistic**: Absolute difference in mean preparation time between recipes with missing ratings vs. non-missing ratings
-- **Null hypothesis**: The missingness of rating does not depend on preparation time; any observed difference is due to random chance
-- **Alternative hypothesis**: The missingness of rating does depend on preparation time
+- **Test statistic**: Absolute difference in mean calories (#) between recipes with missing ratings vs. non-missing ratings
+- **Null hypothesis**: The missingness of rating does not depend on calories; any observed difference is due to random chance
+- **Alternative hypothesis**: The missingness of rating does depend on calorie count
 - **Significance level**: 0.01
 - **Number of permutations**: 10,000
 
@@ -179,11 +176,11 @@ I performed a permutation test with:
   frameborder="0"
 ></iframe>
 
-**Result**: p-value < 0.01 (observed difference was significantly larger than simulated differences)
+**Result**: p-value < 0.01 (p-value of below 0.0 ; the observed difference, 69.00722806375853, was significantly larger than simulated differences)
 
-**Interpretation**: We reject the null hypothesis and conclude that the missingness of ratings likely depends on preparation time. Recipes with extremely long or short preparation times may receive fewer ratings, possibly because users are less likely to attempt them or complete them.
+**Interpretation**: We reject the null hypothesis and conclude that the missingness of ratings likely depends on the number of calories. Recipes with extremely high or low calorie counts may receive fewer ratings, possibly because users are less likely to choose them, since they might be seen as recipes for those with dietary restrictions or as being too unhealthy.  
 
-**Column that rating missingness does NOT depend on: `n_ingredients` (number of ingredients)**
+**Column that rating missingness does NOT depend on: `minutes` (preparation time)**
 
 I performed a similar permutation test with:
 - **Test statistic**: Absolute difference in mean number of ingredients
@@ -198,9 +195,9 @@ I performed a similar permutation test with:
   frameborder="0"
 ></iframe>
 
-**Result**: p-value = 0.34 (observed difference was well within the range of simulated differences)
+**Result**: p-value > 0.01 (p-value was 8.357222350716663, so the observed difference was well within the range of simulated differences)
 
-**Interpretation**: We fail to reject the null hypothesis. The missingness of ratings does not appear to depend on the number of ingredients in a recipe. This suggests that recipe complexity in terms of ingredient count does not affect whether users choose to rate the recipe.
+**Interpretation**: We fail to reject the null hypothesis. The missingness of ratings does not appear to depend on the time a recipe takes to prepare. This suggests that recipe complexity in terms of time does not affect whether users choose to rate the recipe well or poorly.  
 
 ---
 
@@ -231,10 +228,10 @@ For each nutritional factor (carbohydrates, calories, sugar, protein), I perform
 
 | Nutritional Factor | P-value | Observed Difference | Conclusion |
 |-------------------|---------|---------------------|------------|
-| Carbohydrates     | 0.16176 | ~0.015 stars       | Fail to reject null |
-| Calories          | 0.16305 | ~0.014 stars       | Fail to reject null |
-| Sugar             | 0.21847 | ~0.012 stars       | Fail to reject null |
-| Protein           | 0.63893 | ~0.005 stars       | Fail to reject null |
+| Carbohydrates     | 0.16176 | ~0.0193  | Fail to reject null |
+| Calories          | 0.16305 | ~0.006  | Fail to reject null |
+| Sugar             | 0.21847 | ~0.002  | Fail to reject null |
+| Protein           | 0.63893 | ~0.0248  | Fail to reject null |
 
 <iframe
   src="assets/hypothesis-carbs.html"
@@ -249,18 +246,18 @@ For each nutritional factor (carbohydrates, calories, sugar, protein), I perform
 
 However, several interesting patterns emerged:
 
-1. **Carbohydrate content consistently showed the smallest p-values** across multiple test runs (ranging from 0.05 to 0.16), though still not statistically significant. This suggests that carbohydrate content may have a weak relationship with ratings that could be worth investigating further with a larger sample or different methodology.
+1. Carbohydrate content consistently showed the smallest p-values across multiple test runs (ranging from 0.05 to 0.16), though still not statistically significant. This suggests that carbohydrate content may have a weak relationship with ratings that could be worth investigating further with a larger sample or different methodology.
 
-2. **Protein had the largest p-values** (0.35+), indicating virtually no relationship between protein content and ratings.
+2. Protein had the largest p-values (0.35+), indicating virtually no relationship between protein content and ratings.
 
-3. **Sugar p-values remained stable** around 0.2+, showing no strong effect.
+3. Sugar p-values remained stable around 0.2+, showing no strong effect.
 
-4. **Calorie measurements were inconsistent** because the dataset doesn't standardize for serving sizes. Some recipes provide nutritional information for entire batches (e.g., a whole cake) while others show single servings, making calorie count an unreliable metric without additional context.
+4. Calorie measurements were inconsistent, which I think was due to how the dataset doesn't standardize for serving sizes. Some recipes provide nutritional information for entire batches (e.g., a whole cake) while others show single servings, making calorie count an unreliable metric without additional context.
 
 **Methodological Considerations**:
 
 - Testing factors separately allowed me to identify which specific aspects of "healthiness" might matter to users, but it also meant I couldn't detect synergistic effects if they exist
-- The threshold values I chose (20% PDV, 400 calories) were based on FDA guidelines but may not align with how users actually think about "healthy" vs "unhealthy" recipes
+- The threshold values I chose (20% PDV, 400 calories) were based on FDA guidelines, but may not align with how users actually think about "healthy" vs "unhealthy" recipes, as "health" has different meanings for everyone.  
 
 **Conclusion**: Based on this analysis, recipe healthiness does not appear to be a major factor in determining ratings. Users likely rate recipes based on taste, ease of preparation, and whether the recipe worked as expected, rather than nutritional content.
 
@@ -286,7 +283,7 @@ At the time a recipe is published (before any reviews), we have access to:
 - Nutritional information
 - Recipe tags/categories
 
-We would **NOT** use:
+For recipes whose issues we are trying to predict, we would **NOT** be able to use:
 - Reviews (these come after)
 - Ratings (these come after)
 - User information from reviews
@@ -295,16 +292,15 @@ We would **NOT** use:
 
 **Why I Chose To Use F1-Score**
 - The distribution of issue types is likely imbalanced (some complaints are more common than others)
-- F1-score balances precision and recall, which is important because:
-  - **Precision matters**: We don't want to falsely predict issues that don't exist (could discourage people from trying good recipes)
-  - **Recall matters**: We want to catch most actual issues (so users are warned about potential problems)
+- F1-score balances precision and recall, which is important because both **precision** and **recall** matter. 
+  - Precision matters because we don't want to falsely predict issues that don't exist (this could discourage people from trying good recipes)
+  - Recall matters because we want to catch most actual issues (so that users are warned about potential problems)
 - F1-score treats all issue types equally, ensuring the model performs well on rare but important issues, not just common ones
 - Unlike just accuracy, F1-score accounts for class imbalance and gives a more realistic picture of model performance
 
 **Alternative metrics considered (and why they weren't used)**:
-- Accuracy: Not suitable due to class imbalance - a model that predicts the majority class would have high accuracy but be useless
-- Precision/Recall alone: Each tells only part of the story; F1 balances both
-- Weighted F1: Would prioritize common issues over rare ones, but rare issues might be just as important to predict
+- Accuracy: Not suitable due to class imbalance.  For example, a model that predicts the majority class (all good feedback) would have high accuracy but be useless
+- Precision/Recall alone: Each tells only part of the story, but F1 balances both
 
 ---
 
@@ -343,25 +339,20 @@ The baseline model achieved the following on the test set:
 
 However, examining the confusion matrix revealed that the model was essentially predicting the majority class (high ratings) for almost all instances, which explains the high accuracy but poor F1-score.
 
-### Was This Model "Good"?
+### Baseline Model Evaluation
 
-No, my baseline model is not good for several reasons:
-1. **It didn't meaningfully discriminate** - My model largely predicted the majority class, which was to be expected of a naive classifier (one that classifies everything as one thing). 
-2. **It had a low F1-score** - An F1-score of 0.42 indicates poor performance on the minority class (low ratings)
-3. **Some features were not appropriate for the task** - Using `avg_rating` to predict issues is conceptually flawed because:
-   a. Ratings come AFTER reviews, not before
-   b. Using them creates data leakage
-   c. It doesn't help us understand recipe characteristics that lead to issues
+My baseline model was not good for several reasons:
+1. It didn't meaningfully discriminate, as it just predicted the majority class. This was to be expected of a naive classifier (one that classifies everything as one thing). I tested this type of classifier foe this dataset specifically because I knew my data was unbalanced. 
+2. It had a low F1-score, 0.42, which I would say is due to poor performance on the minority class (low ratings)
 
 
 ### My Lessons Learned
 My baseline model revealed the need to:
 1. Reframe the prediction problem to focus on issue types rather than ratings
-2. Use features that are available before reviews are written
-3. Extract meaningful information from text fields (recipe names, ingredients, steps)
-4. Address class imbalance more effectively
+2. Extract meaningful information from text fields (recipe names, ingredients, steps)
+3. Address class imbalance more effectively
 
-At first, I decided to predict rating since it was a simpler thing to test out, and because I originally wanted to see how recipe modifications by users, which is information I'd planned on extracting from reviews,  impacted rating.  However, I realized that reviews are written might be written after  rating, and also found predicting something dynamic or useful more interesting.  That's what the next iteration (Final Model) tries to address, as I try to predicting issue types using recipe characteristics available at the time of publication.  
+I also realized that predicting something dynamic or useful might be more interesting.  That's what the next iteration (Final Model) tries to address, as I try to predicting issue labels of recipes using recipe characteristics available at the time of publication.  
 
 ---
 
@@ -444,10 +435,10 @@ I used **GridSearchCV** with 5-fold cross-validation to find optimal hyperparame
 - `max_depth`: [10, 20, 30, None] - Maximum depth of trees
 - `min_samples_split`: [2, 5, 10] - Minimum samples required to split a node
 
-**Why these parameters?**
+**What These Parameters Do **
 - **n_estimators**: More trees generally improve performance but increase computation time
-- **max_depth**: Controls model complexity and overfitting; deeper trees can capture complex patterns but may overfit
-- **min_samples_split**: Higher values prevent overfitting by requiring more samples before splitting
+- **max_depth**: Determines model complexity, as deeper trees can capture complex patterns but may overfit
+- **min_samples_split**:  Higher values prevent overfitting by requiring more samples before splitting 
 
 **Best Parameters Found**:
 - `n_estimators`: 100
@@ -467,26 +458,26 @@ I used **GridSearchCV** with 5-fold cross-validation to find optimal hyperparame
 
 ### Why This Is An Improvement
 
-While accuracy decreased, **this is actually a sign of improvement** because:
+While accuracy decreased, this is still an improvement because:
 
-1. **The baseline was gaming the metric** by predicting only the majority class, achieving high accuracy but providing no useful predictions for minority classes
+1. The baseline was gaming the metric by predicting only the majority class, achieving high accuracy but providing no useful predictions for minority classes
 
-2. **F1-score is the appropriate metric** for this imbalanced classification problem, and it improved significantly (+38%)
+2. F1-score is a better metric for this imbalanced classification problem, and it improved moderately (+16%)
 
-3. **The model now makes meaningful distinctions** between issue types rather than defaulting to one prediction
+3. The model now makes meaningful distinctions between issue types rather than defaulting to one prediction
 
-4. **Better balance across classes**: The macro-averaged metrics show that the model performs more consistently across all issue types, not just common ones
+4. There is better balance across classes, as the macro-averaged metrics show that the model performs more consistently across all issue types, not just common ones
 
-5. **Actionable predictions**: The model can now actually help identify potential issues before they occur
+5. The model can now actually help identify potential issues before they occur, giving us actionable predictions. 
 
 ### Feature Engineering Impact
 
 The improvements came primarily from:
-1. **Text feature extraction** (TF-IDF + clustering) captured semantic information from recipe names and ingredients
-2. **Nutritional categories** helped identify recipe types prone to specific issues
-3. **Random Forest** naturally handles feature interactions and non-linear relationships
+1. Text feature extraction -  (TF-IDF + clustering) captured semantic information from recipe names and ingredients
+2. Nutritional categories - helped identify recipe types prone to specific issues
+3. Random Forest - naturally handled feature interactions and non-linear relationships
 
-The combination of domain-relevant features and appropriate model selection led to a classifier that provides genuinely useful predictions for identifying potential recipe issues.
+I believe the combination of domain-relevant features and appropriate model selection led to a classifier that provides more useful predictions for identifying potential recipe issues than simply guessing. 
 
 ---
 
@@ -494,12 +485,12 @@ The combination of domain-relevant features and appropriate model selection led 
 
 ### Groups Defined
 
-To assess whether the model performs fairly across different types of recipes, I defined two groups based on **average rating**:
+To assess whether the model performs fairly across different types of recipes, I defined two groups based on average rating:
 
 - **Group X**: Recipes with lower ratings (average rating ≤ 3 stars)
 - **Group Y**: Recipes with higher ratings (average rating > 3 stars)
 
-**Why these groups?** 
+**How I Chose These Groups** 
 - Recipes with lower ratings might have more diverse or severe issues
 - There are far more highly-rated recipes than poorly-rated ones (class imbalance)
 - We want to ensure the model doesn't just perform well on popular recipes while ignoring problematic ones
@@ -508,8 +499,8 @@ To assess whether the model performs fairly across different types of recipes, I
 
 **F1-Score** (macro-averaged)
 
-**Why F1-score instead of accuracy?**
-- There is significant class imbalance: many more highly-rated recipes exist
+**Why F1-score Instead of Accuracy**
+- There is significant class imbalance, as many more highly-rated recipes exist than lower-rated recipes
 - F1-score accounts for both precision (are predicted issues actually correct?) and recall (do we catch all actual issues?)
 - Macro-averaging ensures we evaluate performance on all issue types equally, not just common ones
 
@@ -546,34 +537,39 @@ To assess whether the model performs fairly across different types of recipes, I
 
 **We reject the null hypothesis at the 0.01 significance level.** The model performs significantly better on highly-rated recipes than on lower-rated recipes.
 
-**What does this mean?**
+**What This Means**
 
-The model exhibits **performance disparity** - it is less effective at predicting issues for recipes that already have lower ratings. This is concerning because:
+The model exhibits performance disparity - it is less effective at predicting issues for recipes that already have lower ratings. This is concerning because:
 
-1. **Recipes with issues need the most help**: Lower-rated recipes are precisely the ones where predicting issues would be most valuable, yet the model performs worst on them
+1. Recipes with issues need the most help: Lower-rated recipes are precisely the ones where predicting issues would be most valuable, yet the model performs worst on them
 
-2. **Insufficient training data**: Lower-rated recipes are much rarer in the dataset, giving the model fewer examples to learn from
+2. Indicates insufficient training data: Lower-rated recipes are much rarer in the dataset, giving the model fewer examples to learn from
 
-3. **Issue diversity**: Lower-rated recipes might have more varied or severe issues that are harder to predict from recipe characteristics alone
+3. Signal of Issue diversity: Lower-rated recipes might have more varied or severe issues that are harder to predict from recipe characteristics alone
 
 **Implications**:
+In practice, this could mean that: 
+
 - The model should be used with caution when analyzing recipes with lower ratings
 - Additional data collection focused on problematic recipes could improve fairness
-- Feature engineering specifically targeting common issues in lower-rated recipes might help
-- Alternative approaches like anomaly detection might be more suitable for identifying unusual problems
+- Feature engineering specifically targeting common issues in lower-rated recipes might help improve accuracy of the model
+- Alternative approaches might be more suitable for identifying unusual problems
 
-**Fairness vs. Accuracy Trade-off**: Improving fairness would require collecting more diverse examples of problematic recipes or using techniques like oversampling, synthetic data generation, or cost-sensitive learning to better represent the minority group.
+Improving fairness would require collecting more diverse examples of problematic recipes or using techniques like oversampling or synthetic data generation to better represent the minority group.
 
 ---
 
 ## Conclusion
 
-This analysis explored whether recipe healthiness affects ratings and developed a model to predict common issues in recipes. Key findings:
+This analysis explored whether recipe healthiness affects ratings and developed a model to predict common issues in recipes. 
+My key findings findings were that:
 
-1. **Nutritional content is not a significant factor in ratings** - users prioritize taste and execution over health
-2. **Recipe characteristics can predict issue types** with moderate success (F1 = 0.58)
-3. **The model exhibits fairness concerns**, performing better on highly-rated recipes
-4. **Text features (names, ingredients) are more informative** than basic numerical features
+1. Nutritional content is not a significant factor in ratings - might mean that users prioritize taste and execution over health
+2. Recipe characteristics can predict issue types with moderate success (highest F1 score = 0.58)
+3. The model exhibits fairness concerns, performing better on highly-rated recipes
+4. Text features (names, ingredients) are more informative than basic numerical features
 
-Future work could improve the model by addressing class imbalance, incorporating more sophisticated NLP techniques, and collecting additional data on problematic recipes.
+Future work could improve the model by addressing class imbalance, incorporating more sophisticated data techniques, such as neural networks for multi-label classification, and collecting additional data on problematic recipes.
+
+In practice, I would use this model as part of a larger system. My goal is to create an interface so that users could enter recipe links, which would be used to scrape the recipe site for recipe characteristics in order to compare them to recipes whose issues we've labelled and classified already, so that we can deploy a model that predicts potential issues for other recipes based on this data that it's been trained on. This would give users potential issues the their recipe might face based on similar recipes, helping them to make informed choices for themselves.  The work done here is just one part of this plan, and so this model is still being improved on prior to building a system around it's predictive power. 
 
