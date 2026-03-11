@@ -1,6 +1,7 @@
 # Behind The Rating: An Analysis of Recipe Ratings and Reviews
 ### By: Jasmine Le
 ### Website Link: https://jasmine-1e.github.io/Recipes-and-Ratings/ 
+### (project is under construction, so some graphs/tables may not be visible - working on making this better!)
 ---
 
 ## Introduction
